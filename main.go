@@ -21,12 +21,16 @@ var showFlag = flag.Bool("show", false, "show log and exit")
 func main() {
 	flag.Parse()
 
-	if err := run(); err != nil {
+	if err := run(flag.Args()); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func run() error {
+func run(args []string) error {
+	if len(args) != 0 {
+		return fmt.Errorf("given %d argument(s), but expected no argument", len(args))
+	}
+
 	if *showFlag {
 		return show()
 	}
