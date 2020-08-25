@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 )
@@ -14,13 +16,21 @@ const (
 	timeFormat        = "2006-01-02 15:04:05 -0700"
 )
 
+var showFlag = flag.Bool("show", false, "show log and exit")
+
 func main() {
+	flag.Parse()
+
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
 func run() error {
+	if *showFlag {
+		return show()
+	}
+
 	fmt.Println("WA: wake-up logger")
 
 	t := time.Now()
@@ -29,9 +39,9 @@ func run() error {
 	buf = append(buf, '\n')
 	fmt.Printf("%s", buf)
 
-	home := os.Getenv("HOME")
-	if home == "" {
-		return errors.New("cannot locate HOME directory")
+	home, err := getHome()
+	if err != nil {
+		return err
 	}
 
 	file := filepath.Join(home, logFilename)
@@ -48,4 +58,27 @@ func run() error {
 
 	fmt.Println("Updated", file)
 	return nil
+}
+
+func show() error {
+	home, err := getHome()
+	if err != nil {
+		return err
+	}
+
+	file := filepath.Join(home, logFilename)
+
+	cmd := exec.Command("less", file)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+func getHome() (string, error) {
+	home := os.Getenv("HOME")
+	if home == "" {
+		return "", errors.New("cannot locate HOME directory")
+	}
+	return home, nil
 }
